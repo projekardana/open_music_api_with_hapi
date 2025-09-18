@@ -2,7 +2,7 @@ const AlbumsHandler = require('./handler');
 const { AlbumsValidator } = require('./validator');
 
 const routes = (service) => {
-    const handler = new AlbumsHandler(service);
+    const handler = new AlbumsHandler(service, AlbumsValidator);
 
     return [
         {
@@ -11,7 +11,7 @@ const routes = (service) => {
             handler: handler.postAlbum,
             options: {
                 validate: {
-                    payload: validateAlbumPayload,
+                    payload: AlbumsValidator.validateAlbumPayload,
                     failAction: (request, h, err) => {
                         throw err;
                     },
@@ -29,7 +29,7 @@ const routes = (service) => {
             handler: handler.putAlbumById,
             options: {
                 validate: {
-                    payload: validateAlbumPayload,
+                    payload: AlbumsValidator.validateAlbumPayload,
                     failAction: (request, h, err) => {
                         throw err;
                     },

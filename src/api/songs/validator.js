@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const InvariantError = require('../../exceptions/InvariantError');
 
 const SongPayloadSchema = Joi.object({
     title: Joi.string().required(),
@@ -11,11 +12,11 @@ const SongPayloadSchema = Joi.object({
 
 const SongsValidator = {
     validateSongPayload: (payload) => {
-        const validationResult = SongPayloadSchema.validate(payload);
-        if (validationResult.error) {
-            throw new Error(validationResult.error.message);
+        const { error } = SongPayloadSchema.validate(payload);
+        if (error) {
+            throw new InvariantError(error.message);
         }
-    }
+    },
 };
 
 module.exports = { SongsValidator };

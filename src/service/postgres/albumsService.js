@@ -1,5 +1,8 @@
 const { Pool } = require('pg');
 const { nanoid } = require('nanoid');
+const { mapDBToModel, mapDBToModelSongs} = require('../../utils');
+const InvariantError = require('../../exceptions/InvariantError');
+const NotFoundError = require('../../exceptions/NotFoundError');
 
 class AlbumsService {
     constructor() {
@@ -9,11 +12,15 @@ class AlbumsService {
     async addAlbum({ name, year }) {
         const id = `album-${nanoid(16)}`;
         const query = {
-            text: 'INSERT INTO albums (id, name, year) VALUES ($1, $2, $3) RETURNING id',
+            text: 'INSERT INTO albums VALUES ($1, $2, $3) RETURNING id',
             values: [id, name, year],
         };
 
         const result = await this._pool.query(query);
+        if (!result.rows[0].id) {
+            throw new InvariantError('Gagal menambahkan album');
+        }
+
         return result.rows[0].id;
     }
 
@@ -24,12 +31,25 @@ class AlbumsService {
         };
 
         const result = await this._pool.query(query);
-        if (!result.rowCount) {
-            throw new Error('Album tidak ditemukan');
+
+        if (!result.rows.length) {
+            throw new NotFoundError('Album tidak ditemukan');
         }
 
-        return result.rows[0];
+        const songsQuery = {
+            text: 'SELECT * FROM songs WHERE album_id = $1',
+            values: [id],
+        };
+
+        const songsResult = await this._pool.query(songsQuery);
+
+
+        return {
+            ...result.rows[0],
+            songs: songsResult.rows,
+        };
     }
+
 
     async editAlbumById(id, { name, year }) {
         const query = {
@@ -39,7 +59,7 @@ class AlbumsService {
 
         const result = await this._pool.query(query);
         if (!result.rowCount) {
-            throw new Error('Gagal memperbarui album. Id tidak ditemukan');
+            throw new NotFoundError('Gagal memperbarui album. Id tidak ditemukan');
         }
     }
 
@@ -51,7 +71,7 @@ class AlbumsService {
 
         const result = await this._pool.query(query);
         if (!result.rowCount) {
-            throw new Error('Album gagal dihapus. Id tidak ditemukan');
+            throw new NotFoundError('Album gagal dihapus. Id tidak ditemukan');
         }
     }
 }

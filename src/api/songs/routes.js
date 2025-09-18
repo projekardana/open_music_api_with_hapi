@@ -1,8 +1,9 @@
 const SongsHandler = require('./handler');
-const { validateSongPayload } = require('./validator');
+const { SongsValidator } = require('./validator');
+const Joi = require('joi');
 
 const routes = (service) => {
-    const handler = new SongsHandler(service);
+    const handler = new SongsHandler(service, SongsValidator);
 
     return [
         {
@@ -11,9 +12,9 @@ const routes = (service) => {
             handler: handler.postSong,
             options: {
                 validate: {
-                    payload: validateSongPayload,
+                    payload: SongsValidator.validateSongPayload,
                     failAction: (request, h, err) => {
-                        throw err;
+                        throw err; // diproses sebagai ClientError di handler
                     },
                 },
             },
@@ -22,6 +23,17 @@ const routes = (service) => {
             method: 'GET',
             path: '/songs',
             handler: handler.getSongs,
+            options: {
+                validate: {
+                    query: Joi.object({
+                        title: Joi.string().optional(),
+                        performer: Joi.string().optional(),
+                    }),
+                    failAction: (request, h, err) => {
+                        throw err;
+                    },
+                },
+            },
         },
         {
             method: 'GET',
@@ -34,7 +46,7 @@ const routes = (service) => {
             handler: handler.putSongById,
             options: {
                 validate: {
-                    payload: validateSongPayload,
+                    payload: SongsValidator.validateSongPayload, // ✅ perbaikan di sini
                     failAction: (request, h, err) => {
                         throw err;
                     },
